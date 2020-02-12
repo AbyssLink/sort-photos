@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 from datetime import datetime
@@ -82,8 +83,9 @@ class Sort:
         0 = jpeg / jpg, 1 = png, 2 = mp4, 3 = gif, None = others
         :rtype: int
         """
-        if src_file_.startswith('.'):
-            logger.info(src_file_, ' is Hidden file, will be skipped')
+        if os.path.basename(src_file_).startswith('.'):
+            logger.info(f'{src_file_} is Hidden file, will be skipped')
+            return None
         jpg_types = ['.jpeg', '.jpg']
         png_types = ['.png']
         video_types = ['.mp4']
@@ -116,6 +118,29 @@ class Sort:
         else:
             logger.error('No Date')
 
+    def is_file_duplicate(self, src_file: str, dst_file: str):
+        # todo: finish this function
+        if os.path.exists(dst_file):
+            if self.get_file_md5(src_file) == self.get_file_md5(dst_file):
+                logger.warning(f'src file = {src_file} is duplicated, will be skipped')
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    @staticmethod
+    def get_file_md5(file_: str):
+        buf_size = 65536
+        md5 = hashlib.md5()
+        with open(file_, 'rb') as f:
+            while True:
+                data = f.read(buf_size)
+                if not data:
+                    break
+                md5.update(data)
+        return md5.hexdigest()
+
     def move_exif_img(self, src_file: str):
         # create sub dirs
         dt = self.parse_date_exif(src_file)
@@ -127,6 +152,11 @@ class Sort:
         self.create_dir(sorted_dir)
         basename = os.path.basename(src_file)
         dst_file = os.path.join(sorted_dir, basename)
+        # todo: fix this method
+        if self.is_file_duplicate(src_file,
+                                  os.path.join(sorted_dir,
+                                               dt.strftime('%m-%d-%Y (%H%M%S)') + os.path.splitext(basename)[1])):
+            return None
         shutil.copy(src=src_file, dst=dst_file)
         logger.info(f'copy file to = {dst_file}')
 
@@ -147,6 +177,11 @@ class Sort:
         self.create_dir(unknown_dir)
         basename = os.path.basename(src_file)
         dst_file = os.path.join(unknown_dir, basename)
+        # todo: fix this method
+        if self.is_file_duplicate(src_file,
+                                  os.path.join(unknown_dir,
+                                               dt.strftime('%m-%d-%Y (%H%M%S)') + os.path.splitext(basename)[1])):
+            return None
         shutil.copy(src=src_file, dst=dst_file)
         logger.info(f'copy file to = {dst_file}')
 
@@ -167,6 +202,11 @@ class Sort:
         self.create_dir(parent_dir)
         basename = os.path.basename(src_file)
         dst_file = os.path.join(parent_dir, basename)
+        # todo: fix this method
+        if self.is_file_duplicate(src_file,
+                                  os.path.join(parent_dir,
+                                               dt.strftime('%m-%d-%Y (%H%M%S)') + os.path.splitext(basename)[1])):
+            return None
         shutil.copy(src=src_file, dst=dst_file)
         logger.info(f'copy file to = {dst_file}')
 
@@ -195,10 +235,6 @@ class Sort:
     @staticmethod
     def datetime_to_timestamp(date_: datetime):
         return date_.timestamp()
-
-    def check_file_duplicate(self):
-        # todo: finish this function
-        pass
 
     def get_rename_suffix(self, name_: str):
         if name_ in self.__name_cnt.keys():

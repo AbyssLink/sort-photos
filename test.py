@@ -1,3 +1,4 @@
+import hashlib
 import os
 from datetime import datetime
 
@@ -13,6 +14,35 @@ def main():
     print('File extension: %s' % kind.extension)
     print('File MIME type: %s' % kind.mime)
     print(type(kind.mime))
+
+
+def is_file_duplicate(src_file: str, dst_file: str):
+    # todo: finish this function
+    if os.path.exists(dst_file):
+        if get_file_md5(src_file) == get_file_md5(dst_file):
+            return True
+        else:
+            return False
+    else:
+        return False
+
+
+def get_file_md5(file_: str):
+    buf_size = 65536
+    md5 = hashlib.md5()
+    with open(file_, 'rb') as f:
+        while True:
+            data = f.read(buf_size)
+            if not data:
+                break
+            md5.update(data)
+    return md5.hexdigest()
+
+
+def test_file_hash():
+    print(type(get_file_md5('/Users/chiya/Pictures/Sorting/Photos_Collection/2016/06/06-19-2016 (152730).jpg')))
+    print(get_file_md5('/Users/chiya/Pictures/Sorting/Photos_Collection/2016/06/06-19-2016 (152730).jpg'))
+    print(get_file_md5('/Users/chiya/Pictures/Sorting/Photos_Collection/2016/06/06-19-2016 (152730)_2.jpg'))
 
 
 def test():
@@ -39,5 +69,15 @@ def datetime_to_timestamp(date_: datetime):
     return date_.timestamp()
 
 
+def test_hidden_file():
+    if os.path.basename('/Volumes/Extreme SSD/Pictures/Sorting/杭州家老硬盘备份/Ipoad(2013柳絮）/._来源：Ipad照片 113.jpg').startswith(
+            '.'):
+        print("YES!")
+    else:
+        print("NO!")
+
+
 if __name__ == '__main__':
-    test()
+    # test()
+    # test_file_hash()
+    test_hidden_file()
