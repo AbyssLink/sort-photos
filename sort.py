@@ -1,132 +1,209 @@
 import os
 import shutil
-import time
 from datetime import datetime
 
 from PIL import Image
 from loguru import logger
 
-base_path = '/Users/chiya/Pictures/Sorting/Unsort'
-write_path = '/Users/chiya/Pictures/Sorting/Photos_Collection'
-src_img_num = 0
-dst_img_num = 0
-un_tag_num = 0
-name_cnt_dict = {}
+logger.add("{time}.log")
 
 
-def sort_img(base_name_, file_path_):
-    global dst_img_num, un_tag_num
-    month = get_month(file_path_)
-    if month is not None:
-        # add 0 if single digit
-        month = f'{int(month):02}'
-        year = get_year(file_path_)
-        if not os.path.exists(os.path.join(write_path, year, month)):
-            os.makedirs(os.path.join(write_path, year, month))
-        copy_path = os.path.join(
-            os.path.join(write_path, year, month), base_name_)
-        shutil.copy(file_path_, copy_path)
-        update_img_name(copy_path)
-    else:
-        if not os.path.exists(os.path.join(write_path, "unknown")):
-            os.makedirs(os.path.join(write_path, "unknown"))
-        divisor = un_tag_num // 300
-        if not os.path.exists(os.path.join(write_path, "unknown", str(divisor))):
-            os.makedirs(os.path.join(write_path, "unknown", str(divisor)))
-        copy_path = os.path.join(
-            os.path.join(write_path, "unknown", str(divisor)), base_name_)
-        shutil.copy(file_path_, copy_path)
-        update_img_name(copy_path)
+class Sort:
+    def __init__(self, src_dir_: str, dst_dir_: str):
+        self.__src_dir: str = src_dir_
+        self.__dst_dir: str = dst_dir_
+        self.__err_dir_root: str = os.path.join(dst_dir_, 'unknown')
+        self.__video_dir_root: str = os.path.join(dst_dir_, 'others', 'videos')
+        self.__gif_dir_root: str = os.path.join(dst_dir_, 'others', 'gifs')
+        self.__sorted_dir_root: str = self.__dst_dir
+        self.__src_img_cnt: int = 0
+        self.__dst_img_cnt: int = 0
+        self.__unknown_img_cnt: int = 0
+        self.__name_cnt: dict = {}
 
+    def main_sort(self):
+        if self.check_dir_is_valid(self.__src_dir) and self.check_dir_is_valid(self.__dst_dir):
+            self.recursive_sort(self.__src_dir)
+        logger.info(self.__src_img_cnt)
+        logger.info(self.__dst_img_cnt)
 
-def main_process(path_):
-    global src_img_num
-    files = os.listdir(path_)
-    for file in files:
-        if not file.startswith('.'):
-            file_path = os.path.join(path_, file)
+    def recursive_sort(self, path_: str):
+        files = os.listdir(path_)
+        # todo: update
+        for f in files:
+            file_path = os.path.join(path_, f)
             if os.path.isfile(file_path):
-                types = [".jpeg", ".jpg", ".png"]
-                extension = os.path.splitext(file)[1]
-                if extension in types:
-                    src_img_num = src_img_num + 1
-                    sort_img(base_name_=file, file_path_=file_path)
+                if self.check_file_type(file_path) is not None:
+                    self.__src_img_cnt += 1
+                    self.sort_img(file_path)
                 else:
-                    continue
+                    pass
+            elif os.path.isdir(file_path):
+                self.recursive_sort(file_path)
             else:
-                main_process(file_path)
+                continue
+
+    def sort_img(self, file_: str):
+        if self.check_file_type(file_) is 0:
+            dt = self.parse_date_exif(file_)
+            if dt is not None:
+                self.move_exif_img(file_)
+            else:
+                self.move_unknown_img(file_)
+        if self.check_file_type(file_) is 1:
+            self.move_unknown_img(file_)
+        elif self.check_file_type(file_) in [2, 3]:
+            self.move_others(file_)
         else:
-            continue
+            pass
+        self.__dst_img_cnt += 1
 
-
-@logger.catch
-def get_original_time(img_path_: str):
-    # png don't contain exif info
-    types = [".png"]
-    ext_name = os.path.splitext(img_path_)[1]
-    if ext_name in types:
-        return None
-    im = Image.open(img_path_)
-    exif = im.getexif()
-    if exif.get(36867) is not None:
-        dt_str = exif.get(36867)
-        # print(dt_str)
-        try:
+    @staticmethod
+    @logger.catch
+    def parse_date_exif(img_file: str):
+        """
+        extract date info from EXIF data
+        :param img_file:
+        :return:
+        """
+        im = Image.open(img_file)
+        exif = im.getexif()
+        if exif.get(36867) is not None:
+            dt_str = exif.get(36867)
             dt = datetime.strptime(dt_str, '%Y:%m:%d %H:%M:%S')
             return dt
-        except:
-            print("An error in Date, file path = ", img_path_)
-    else:
-        return None
-
-
-def get_month(img_path_: str):
-    dt = get_original_time(img_path_)
-    if dt is not None:
-        return str(dt.month)
-    else:
-        return None
-
-
-def get_year(img_path_: str):
-    dt = get_original_time(img_path_)
-    if dt is not None:
-        return str(dt.year)
-    else:
-        return None
-
-
-def update_img_name(img_path_: str):
-    global un_tag_num, dst_img_num, name_cnt_dict
-    dt = get_original_time(img_path_)
-    ext_name = os.path.splitext(img_path_)[1]
-    if dt is None:
-        mtime = os.path.getmtime(img_path_)
-        dt = datetime.fromtimestamp(mtime)
-        dt_str = dt.strftime('%m-%d-%Y (%H%M%S)') + '_' + str(un_tag_num)
-        un_tag_num = un_tag_num + 1
-    else:
-        dt_str = dt.strftime('%m-%d-%Y (%H%M%S)')
-    new_basename = dt_str + ext_name
-    dirname = os.path.dirname(img_path_)
-    new_path = os.path.join(dirname, new_basename)
-    if os.path.exists(new_path):
-        if new_basename in name_cnt_dict.keys():
-            name_cnt_dict[new_basename] = name_cnt_dict[new_basename] + 1
         else:
-            name_cnt_dict[new_basename] = 1
-        new_basename = dt_str + '_' + str(name_cnt_dict[new_basename]) + ext_name
-        new_path = os.path.join(dirname, new_basename)
-    os.rename(src=img_path_, dst=new_path)
-    dst_img_num = dst_img_num + 1
-    atime_t = time.mktime(dt.timetuple())
-    mtime_t = atime_t
-    os.utime(new_path, (atime_t, mtime_t))
-    print("Copy new file as :", new_path)
+            return None
 
+    @staticmethod
+    def check_file_type(src_file_: str):
+        """
+        todo: more clear method
+        0 = jpeg / jpg, 1 = png, 2 = mp4, 3 = gif, None = others
+        :rtype: int
+        """
+        if src_file_.startswith('.'):
+            logger.info(src_file_, ' is Hidden file, will be skipped')
+        jpg_types = ['.jpeg', '.jpg']
+        png_types = ['.png']
+        video_types = ['.mp4']
+        gif_types = ['.gif']
+        ext = os.path.splitext(src_file_)[1]
+        if ext in jpg_types:
+            return 0
+        elif ext in png_types:
+            return 1
+        elif ext in video_types:
+            return 2
+        elif ext in gif_types:
+            return 3
+        else:
+            return None
 
-if __name__ == '__main__':
-    logger.add("file_{time}.log")
-    main_process(base_path)
-    print('src img num: ', src_img_num)
-    print('dst img num: ', dst_img_num)
+    def format_file_info(self, file_: str, date_: datetime):
+        if date_ is not None:
+            # update file date
+            atime_t = self.datetime_to_timestamp(date_)
+            mtime_t = atime_t
+            os.utime(file_, (atime_t, mtime_t))
+            # rename file
+            dt_str = date_.strftime('%m-%d-%Y (%H%M%S)')
+            suffix = self.get_rename_suffix(file_)
+            ext = os.path.splitext(file_)[1]
+            rename_str = f'{dt_str}{suffix}{ext}'
+            dst_file = os.path.join(os.path.dirname(file_), rename_str)
+            os.rename(src=file_, dst=dst_file)
+        else:
+            logger.error('No Date')
+
+    def move_exif_img(self, src_file: str):
+        # create sub dirs
+        dt = self.parse_date_exif(src_file)
+        year = str(dt.year)
+        month = f'{int(dt.month):02}'
+        sorted_dir = os.path.join(self.__sorted_dir_root, year, month)
+
+        # copy to dst dir
+        self.create_dir(sorted_dir)
+        basename = os.path.basename(src_file)
+        dst_file = os.path.join(sorted_dir, basename)
+        shutil.copy(src=src_file, dst=dst_file)
+        logger.info(f'copy file to = {dst_file}')
+
+        # update file info
+        self.format_file_info(file_=dst_file, date_=dt)
+
+    def move_unknown_img(self, src_file: str):
+        # no exif info, use mtime instead
+        mtime = os.path.getmtime(src_file)
+        dt = self.timestamp_to_datetime(mtime)
+
+        # create sub dirs
+        divisor = str(self.__unknown_img_cnt // 300)
+        unknown_dir = os.path.join(self.__err_dir_root, divisor)
+        self.__unknown_img_cnt += 1
+
+        # copy to dst dir
+        self.create_dir(unknown_dir)
+        basename = os.path.basename(src_file)
+        dst_file = os.path.join(unknown_dir, basename)
+        shutil.copy(src=src_file, dst=dst_file)
+        logger.info(f'copy file to = {dst_file}')
+
+        # update file info
+        self.format_file_info(file_=dst_file, date_=dt)
+
+    def move_others(self, src_file: str):
+        if self.check_file_type(src_file) is 2:
+            parent_dir = self.__video_dir_root
+        elif self.check_file_type(src_file) is 3:
+            parent_dir = self.__gif_dir_root
+        else:
+            return None
+        # no exif info, use mtime instead
+        dt = self.timestamp_to_datetime(os.path.getmtime(src_file))
+
+        # copy to dst dir
+        self.create_dir(parent_dir)
+        basename = os.path.basename(src_file)
+        dst_file = os.path.join(parent_dir, basename)
+        shutil.copy(src=src_file, dst=dst_file)
+        logger.info(f'copy file to = {dst_file}')
+
+        # update file info
+        self.format_file_info(file_=dst_file, date_=dt)
+
+    @staticmethod
+    def create_dir(dir_: str):
+        if not os.path.exists(dir_):
+            os.makedirs(dir_)
+        else:
+            pass
+
+    @staticmethod
+    def check_dir_is_valid(dir_: str):
+        if not os.path.exists(dir_):
+            logger.error("No Such Directory = ", dir_)
+            return False
+        else:
+            return True
+
+    @staticmethod
+    def timestamp_to_datetime(float_time_):
+        return datetime.fromtimestamp(float_time_)
+
+    @staticmethod
+    def datetime_to_timestamp(date_: datetime):
+        return date_.timestamp()
+
+    def check_file_duplicate(self):
+        # todo: finish this function
+        pass
+
+    def get_rename_suffix(self, name_: str):
+        if name_ in self.__name_cnt.keys():
+            self.__name_cnt[name_] += 1
+            return f'_{self.__name_cnt[name_]}'
+        else:
+            self.__name_cnt[name_] = 0
+            return ''
