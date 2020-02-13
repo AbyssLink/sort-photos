@@ -25,8 +25,10 @@ class Sort:
     def main_sort(self):
         if self.check_dir_is_valid(self.__src_dir) and self.check_dir_is_valid(self.__dst_dir):
             self.recursive_sort(self.__src_dir)
-        logger.info(self.__src_img_cnt)
-        logger.info(self.__dst_img_cnt)
+            logger.info(self.__src_img_cnt)
+            logger.info(self.__dst_img_cnt)
+        else:
+            logger.error('Src or Dst folder is not valid.')
 
     def recursive_sort(self, path_: str):
         files = os.listdir(path_)
@@ -86,7 +88,7 @@ class Sort:
         if os.path.basename(src_file_).startswith('.'):
             logger.info(f'{src_file_} is Hidden file, will be skipped')
             return None
-        jpg_types = ['.jpeg', '.jpg']
+        jpg_types = ['.jpeg', '.jpg', '.JPG', '.JPEG']
         png_types = ['.png']
         video_types = ['.mp4']
         gif_types = ['.gif']

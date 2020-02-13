@@ -46,7 +46,7 @@ def test_file_hash():
 
 
 def test():
-    img_file = '/Users/chiya/Pictures/Sorting/Unsort/老照片/来自：GT-I9500(1)/Screenshots/Screenshot_2016-07-19-12-57-09.png'
+    img_file = '/Users/chiya/Pictures/MAG/TMP/out.jpg'
     mtime = os.path.getmtime(img_file)
     atime = os.path.getatime(img_file)
     ctime = os.path.getctime(img_file)
@@ -69,15 +69,7 @@ def datetime_to_timestamp(date_: datetime):
     return date_.timestamp()
 
 
-def test_hidden_file():
-    if os.path.basename('/Volumes/Extreme SSD/Pictures/Sorting/杭州家老硬盘备份/Ipoad(2013柳絮）/._来源：Ipad照片 113.jpg').startswith(
-            '.'):
-        print("YES!")
-    else:
-        print("NO!")
-
-
 if __name__ == '__main__':
-    # test()
+    test()
     # test_file_hash()
-    test_hidden_file()
+    # test_hidden_file()
