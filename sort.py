@@ -66,6 +66,7 @@ class Sort:
     def parse_date_exif(img_file: str):
         """
         extract date info from EXIF data
+        code 36867: DateTimeOriginal
         :param img_file:
         :return:
         """
