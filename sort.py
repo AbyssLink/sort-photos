@@ -1,12 +1,13 @@
-from utils import is_file_duplicate, parse_date_exif, is_dir_valid, create_dir
 import hashlib
 import os
-from os import path
 import shutil
 from datetime import datetime
+from os import path
 
-from PIL import Image
 from loguru import logger
+from PIL import Image
+
+from utils import create_dir, is_dir_valid, is_file_duplicate, parse_date_exif
 
 logger.add("{time}.log")
 
@@ -133,8 +134,10 @@ class Sort:
         dt = datetime.fromtimestamp(mtime)
 
         # create sub dirs
-        divisor = str(self.__unknown_img_cnt // 300)
-        unknown_dir = os.path.join(self.__err_dir_root, divisor)
+        # divisor = str(self.__unknown_img_cnt // 300)
+        year = str(dt.year)
+        month = f'{int(dt.month):02}'
+        unknown_dir = os.path.join(self.__err_dir_root, year, month)
         self.__unknown_img_cnt += 1
 
         # copy to dst dir
