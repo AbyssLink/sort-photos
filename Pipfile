@@ -1,0 +1,15 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+pipreqs = "*"
+filetype = "==1.0.7"
+loguru = "==0.5.1"
+Pillow = "==7.2.0"
+
+[requires]
+python_version = "3.7"
