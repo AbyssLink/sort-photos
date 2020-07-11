@@ -1,10 +1,29 @@
 # Sort_photos
 
+## English
+
 ### Introduction
 
 a simple python script for sorting and organizing photos by date (use exif metadata)
 
 this script will organize unsort photos to different folders by year, month, and rename photo name use photo created timestamp.
+
+### Usage
+
+```bash
+# clone repository
+git clone https://github.com/AbyssLink/sort-photos.git
+cd sort-photos
+
+# use pipenv
+pipenv install
+pipenv shell
+python client.py
+
+# use pip
+pip install -r requirements.txt
+python client.py
+```
 
 ### Features
 
@@ -17,15 +36,30 @@ this script will organize unsort photos to different folders by year, month, and
 
 ![](https://raw.githubusercontent.com/ShiroCheng/pic/master/Sort-photos-Screenshots_1.jpg)
 
-
-
 ## 中文
 
 ### 简介
 
-一个简单的 python 脚本，用于按日期对照片进行排序（使用exif元数据）
+一个简单的 python 脚本，用于按日期对照片进行排序（使用 exif 元数据）
 
 此脚本将按年，月将未分类的照片整理到不同的文件夹中，并使用创建的照片时间戳重命名照片名称。
+
+### 使用
+
+```bash
+# clone repository
+git clone https://github.com/AbyssLink/sort-photos.git
+cd sort-photos
+
+# use pipenv
+pipenv install
+pipenv shell
+python client.py
+
+# use pip
+pip install -r requirements.txt
+python client.py
+```
 
 ### 功能
 
@@ -33,4 +67,3 @@ this script will organize unsort photos to different folders by year, month, and
 - 更新照片时间和文件名，将照片的 created time 修改为 exif 的 DateTimeOriginal
 - 其他类型照片（截图，png, gif, mp4 等无 exif 信息的）归类到其他文件夹
 - 去重（依据文件 md5 值判断文件是否相同）
-
